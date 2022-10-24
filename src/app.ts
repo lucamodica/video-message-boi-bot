@@ -32,6 +32,7 @@ bot.command('keyboard', (ctx) => {
     Markup.inlineKeyboard([
       Markup.button.callback('First option', 'first'),
       Markup.button.callback('Second option', 'second'),
+      Markup.button.callback('Third option', 'third'),
     ])
   );
 });
