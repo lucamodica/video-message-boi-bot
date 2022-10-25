@@ -1,38 +1,49 @@
 import { Context, Markup, Telegraf, Telegram } from 'telegraf';
 import { Update } from 'typegram';
+import axios from 'axios';
+import fs from 'fs';
+
 
 // bot init
 const token: string = process.env.BOT_TOKEN as string;
 const bot: Telegraf<Context<Update>> = new Telegraf(token);
-const telegram: Telegram = new Telegram(token);
-// const chatId: string = process.env.CHAT_ID as string;
 
 
 // bot handlers
 // /start
 bot.start((ctx) => {
-  ctx.reply('Hello ' + ctx.from.first_name + '!');
+  ctx.reply(`Hello ${ctx.from.first_name}! This is video message boi.`);
+  ctx.reply(`Send/record a video message, I'll download it!`);
 });
 
-// /help
-bot.help((ctx) => {
-  ctx.reply('Send /start to receive a greeting');
-  ctx.reply('Send /keyboard to receive a message with a keyboard');
-  ctx.reply('Send /quit to stop the bot');
-});
+// download on any video message sent
+bot.on('video_note', async (ctx) => {
+  if (ctx.message.video_note) {
+    // get file id
+    const videoNoteId = ctx.message.video_note.file_id;
 
-// /quit
-bot.command('quit', (ctx) => {
-  // Explicit usage
-  ctx.telegram.leaveChat(ctx.message.chat.id);
+    // ensuring that the download path exists
+    const downloadPath = `./video_notes`;
+    fs.mkdir(downloadPath, (err) => {
+      if (err) throw err;
+    });
 
-  // Context shortcut
-  ctx.leaveChat();
-});
+    // download file
+    ctx.telegram.getFileLink(videoNoteId).then((url) => {
+      axios({url: url.href, responseType: 'stream'}).then(response => {
+        return new Promise((resolve, reject) => {
 
-// doing something on receiving a video note
-bot.on('video_note', (ctx) => {
-  ctx.reply(`The video message`);
+          // save file
+          response.data.pipe(fs.createWriteStream(downloadPath + `/${ctx.update.message.from.id}.MPEG4`))
+            .on('finish', () => ctx.reply('Video message downloaded!'))
+            .on('error', (e: any) => {
+              ctx.reply('Video message not downloaded due to an error :(');
+              console.log('The error: ', e);
+            })
+          });
+        })
+    });
+  }
 });
 
 
