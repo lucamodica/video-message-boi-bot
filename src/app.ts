@@ -1,4 +1,4 @@
-import { Context, Markup, Telegraf, Telegram } from 'telegraf';
+import { Context, Telegraf } from 'telegraf';
 import { Update } from 'typegram';
 import axios from 'axios';
 import fs from 'fs';
@@ -7,48 +7,48 @@ import fs from 'fs';
 // bot init
 const token: string = process.env.BOT_TOKEN as string;
 const bot: Telegraf<Context<Update>> = new Telegraf(token);
+const helpMsg = `Send/record a video message, I'll convert it to a normal video!`;
 
 
 // bot handlers
 // /start
 bot.start((ctx) => {
-  ctx.reply(`Hello ${ctx.from.first_name}! This is video message boi.`);
-  ctx.reply(`Send/record a video message, I'll download it!`);
+  ctx.reply(
+    `Hello ${ctx.from.first_name}! This is video message boi bot.`
+  );
+  ctx.reply(helpMsg);
 });
 
-// download on any video message sent
+// /help
+bot.help((ctx) => ctx.reply(helpMsg));
+
+// send the normal video from a video message
 bot.on('video_note', async (ctx) => {
-  if (ctx.message.video_note) {
-    // get file id
-    const videoNoteId = ctx.message.video_note.file_id;
+  // get file id
+  const videoNoteId = ctx.message.video_note.file_id;
 
-    // ensuring that the download path exists
-    const downloadPath = `./video_notes`;
-    fs.mkdir(downloadPath, (err) => {
-      if (err) throw err;
-    });
-
-    // download file
-    ctx.telegram.getFileLink(videoNoteId).then((url) => {
-      axios({url: url.href, responseType: 'stream'}).then(response => {
-        return new Promise((resolve, reject) => {
-
-          // save file
-          response.data.pipe(fs.createWriteStream(downloadPath + `/${ctx.update.message.from.id}.MPEG4`))
-            .on('finish', () => ctx.reply('Video message downloaded!'))
-            .on('error', (e: any) => {
-              ctx.reply('Video message not downloaded due to an error :(');
-              console.log('The error: ', e);
-            })
-          });
-        })
-    });
-  }
+  // reply with a normal video
+  await ctx.reply('Converting video message to video...');
+  await ctx.replyWithVideo({
+    url: (await ctx.telegram.getFileLink(videoNoteId)).href
+  }).catch((err) => {
+    ctx.reply('Cannot convert to video due to an error :(');
+    ctx.reply('Try sending the video message again!');
+    console.log('Error on sending normal video: ', err);
+  });
+  await ctx.reply('Video sent!');
 });
 
 
 // bot starting point
-bot.launch();
+bot.launch({
+  dropPendingUpdates: true
+});
+
+// custom error handling
+bot.catch((err) => {
+  console.log('Error occoured! ', err)
+})
 
 
 // Enable graceful stop
