@@ -1,7 +1,5 @@
 import { Context, Telegraf } from 'telegraf';
 import { Update } from 'typegram';
-import axios from 'axios';
-import fs from 'fs';
 
 
 // bot init
