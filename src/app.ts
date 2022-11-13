@@ -8,7 +8,6 @@ const bot: Telegraf<Context<Update>> = new Telegraf(token);
 const helpMsg = `Send/record a video message, I'll convert it to a normal video!`;
 
 
-// bot handlers
 // /start
 bot.start((ctx) => {
   ctx.reply(
@@ -16,10 +15,8 @@ bot.start((ctx) => {
   );
   ctx.reply(helpMsg);
 });
-
 // /help
 bot.help((ctx) => ctx.reply(helpMsg));
-
 // send the normal video from a video message
 bot.on('video_note', async (ctx) => {
   // get file id
@@ -42,7 +39,6 @@ bot.on('video_note', async (ctx) => {
 bot.launch({
   dropPendingUpdates: true
 });
-
 // custom error handling
 bot.catch((err) => {
   console.log('Error occoured! ', err)
